@@ -5,81 +5,31 @@ HF_PATH = os.path.dirname(__file__)
 
 class Kunde():
 
-	def __init__(self, navn, org_nr, adresse):
+	def __init__(self, navn, org_nr, adresse, vat=0.25, valuta="NOK"):
 		self.navn = navn
 		self.org_nr = org_nr
 		self.adresse = adresse
+		self.vat = vat
+		self.valuta = valuta
 
+	def __str__(self):
+		return self.navn
+
+class Bank():
+
+	def __init__(self, konto, iban, bic, bank):
+		self.konto = konto
+		self.iban = iban
+		self.bic = bic
+		self.bank = bank
 
 class Faktura():
 
-	def __init__(self, client):
-
-		# Customer data
-		self.client = client
-		
-		# Invoice data
-		self.invoice_number = self.make_invoice_number()
+	def __init__(self):
+		self.id = self.make_invoice_number()
 		dates = self.get_invoice_dates()
 		self.dato = dates[0]
 		self.forfall = dates[1]
-
-		# The standard table row. Use it to populate the tr_elem_list
-		self.tr_elem_mal = """
-			<tr>
-				<td align="left">{}</td>
-				<td align="left">{}</td>
-				<td align="left">{}</td>
-				<td align="left">{}</td>
-				<td align="right"><strong>{:.2f} {}</strong></td>
-			</tr>"""
-		self.tr_elem_list = ""
-		self.total = 0
-
-		# Stylesheet
-		self.css = "/".join(["..", "hammer_faktura", "maler","faktura.css"])
-
-
-	def generate_body(self):
-		"""
-		Returns the invoice body.
-		"""
-		with open(os.path.join(HF_PATH, "maler", "fakturamal.html")) as f:
-			fakturamal = f.read()
-
-		return fakturamal.format(self.css,
-								self.client.navn,
-								self.client.org_nr,
-								self.client.adresse,
-								self.invoice_number, 
-								self.dato, 
-								self.forfall, 
-								self.generate_table())
-
-	def add_to_tr_elem(self, id, navn, type, beløp, enhet, leveringsdato):
-		"""
-		Adds one tr_elem to the tr_elem_list with leveringsdato, id, name, type, beløp, enhet.
-		I.e. it adds one row to the table.
-		"""
-		self.tr_elem_list += self.tr_elem_mal.format(leveringsdato, id, navn, type, beløp, enhet)
-		self.total += beløp
-		return
-
-	def generate_table(self, vat=0.25):
-		"""
-		Generate the table.
-		Presupposes the tr_elem_list has been populated.
-		Keyword argument VAT=0.25
-		"""
-		with open(os.path.join(HF_PATH, "maler", "tabellmal.html")) as f:
-			tabellmal = f.read()
-
-		netto = self.total
-
-		brutto = netto * (1 + vat)
-
-		return tabellmal.format(self.tr_elem_list, netto, vat, brutto)
-		
 
 	def make_invoice_number(self):
 		"""
@@ -98,6 +48,112 @@ class Faktura():
 		forfall = datetime.datetime.fromtimestamp(next_month).strftime("%d.%m.%Y")
 
 		return (dato, forfall)
+
+class Generator():
+	"""
+	Generator takes two arguments, client (hammer_faktura.Kunde) and bank (hammer_faktura.Bank).
+	Invoice data is generated automatically.
+	"""
+
+	def __init__(self, client, bank):
+
+		# Customer data
+		self.client = client
+		
+		# Invoice data
+		self.invoice = Faktura()
+
+		# Bank
+		self.bank = bank
+
+		# The standard table row. Use it to populate the tr_elem_list
+		with open(os.path.join(HF_PATH, "maler", "tr_elem_mal.html")) as f:
+			self.tr_elem_mal = f.read()
+
+		self.tr_elem_list = []
+		self.netto_total = 0
+		self.brutto_total = 0
+
+		self.table = ""
+
+		# Stylesheet
+		self.css = "/".join(["..", "hammer_faktura", "maler","faktura.css"])
+
+
+	def generate_body(self):
+		"""
+		Returns the invoice body.
+		"""
+		with open(os.path.join(HF_PATH, "maler", "fakturamal.html")) as f:
+			fakturamal = f.read()
+
+		with open(os.path.join(HF_PATH, "maler", "style.html")) as f:
+			style = f.read()
+
+
+		return fakturamal.format(
+								# CSS
+								style=style,
+								# Client inforamsjon
+								navn=self.client.navn,
+								org_nr=self.client.org_nr,
+								adresse=self.client.adresse,
+								# Invoice information
+								id=self.invoice.id, 
+								dato=self.invoice.dato, 
+								forfall=self.invoice.forfall, 
+								# Table
+								table=self.table,
+								# Bank details
+								konto=self.bank.konto,
+								iban=self.bank.iban,
+								bic=self.bank.bic,
+								bank=self.bank.bank
+								)
+
+	def add_to_invoice(self, leveringsdato, id, beskrivelse, netto, vat=None):
+		"""
+		Adds one tr_elem to the tr_elem_list.
+		Args: leveringsdato, id, beskrivelse, netto.
+		Optional: vat (float) to override client-level VAT
+		I.e. it adds one row to the table.
+		"""
+		if not vat:
+			vat = self.client.vat
+
+		brutto = netto * (vat + 1)
+
+		self.tr_elem_list.append(self.tr_elem_mal.format(leveringsdato=leveringsdato, 
+														id=id, 
+														beskrivelse=beskrivelse, 
+														netto=netto, 
+														vat=vat, 
+														brutto=brutto))
+		self.netto_total += netto
+		self.brutto_total += brutto
+		return
+
+	def generate_table(self):
+		"""
+		Generate the table.
+		Presupposes the tr_elem_list has been populated.
+		"""
+		with open(os.path.join(HF_PATH, "maler", "tabellmal.html")) as f:
+			tabellmal = f.read()
+
+		tabell = "\n".join(self.tr_elem_list)
+
+		totalMVA = self.brutto_total - self.netto_total
+
+		self.table = tabellmal.format(tabell=tabell, 
+									netto=self.netto_total, 
+									totalMVA=totalMVA, 
+									brutto=self.brutto_total,
+									valuta=self.client.valuta)
+
+		return
+		
+
 
 	
 

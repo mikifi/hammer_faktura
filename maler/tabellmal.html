@@ -1,24 +1,26 @@
 <hr>
-    <table>
+    <table class="oppdragsliste">
         <colgroup>
+            <col width="10%" />
             <col width="20%" />
-            <col width="20%" />
-            <col width="20%" />
-            <col width="20%" />
-            <col width="20%" />
+            <col width="50%" />
+            <col width="10%" />
+            <col width="10%" />
+            <col width="10%" />
         </colgroup>
         <thead>
             <tr class="header">
                 <th align="left">DATO</th>
                 <th align="left">ID</th>
-                <th align="left">NAVN</th>
-                <th align="left">TYPE</th>
-                <th align="right">BELØP</th>
+                <th align="left">BESKRIVELSE</th>
+                <th align="right">NETTO<br>({valuta})</th>
+                <th align="right">MVA</th>
+                <th align="right">BRUTTO<br>({valuta})</th>
             </tr>
         </thead>
     <tbody>
 
-        {}
+        {tabell}
 
     </tbody>
 </table>
@@ -26,7 +28,7 @@
 <hr>
 
 <div class="total">
-    <strong>Nettosalg: {:.2f}</strong><br>
-    <strong>MVA: {:.2%}</strong><br>
-    <strong>Til sammen: {:.2f}</strong><br>
+    <strong>Nettosalg: {netto:.2f} {valuta}</strong><br>
+    <strong>MVA: {totalMVA:.2f} {valuta}</strong><br>
+    <strong>Til sammen: {brutto:.2f} {valuta}</strong><br>
 </div>

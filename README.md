@@ -2,11 +2,7 @@
 
 Dette er en en fakturagenerator som kan brukes til å skape fakturaer.
 
-Pakken består av to klasser:
+Se bloggen min for mer informasjon om hvordan den virker:
 
-
-**Faktura**
-: er mellomleddet mellom koden og HTML-malene som brukes til å generere fakturaen. Tar 1 argument: en Kunde.
-
-**Kunde**
-: inneholder nødvendig informasjon om kunden.
+![Fakturagenerator i Python (tidligere utgave)](https://www.olehammersland.com/blogg/fakturagenerator-i-python/) 
+![Fakturagenerator del to (siste versjon)](https://www.olehammersland.com/blogg/fakturagenerator-i-python/) 
