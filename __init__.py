@@ -1,7 +1,46 @@
 import os, time, datetime, uuid
+from . import sql_handler
 
 # Constant
 HF_PATH = os.path.dirname(__file__)
+
+def add_client(values):
+    """
+    Adds a client to the database.
+    Arguments: tuple = (navn str, org_nr str, adresse str, vat float, valuta str)
+    Returns None
+    """
+    
+    sql = """
+        INSERT INTO clients
+        VALUES (?,?,?,?,?);
+        """
+
+    sql_handler.execute(sql, values)
+
+    return
+
+def add_invoice_item(values):
+	"""
+	Adds an invoice item to the database.
+	Arguments: dict = {"dato": int, "id": str, "beskrivelse": str, "netto": float, "client": int}
+	Optional = {"vat": float}
+	Returns None
+	"""
+
+	values.setdefault("vat", None)
+
+	sql = """
+		INSERT INTO invoice_items
+		VALUES (?,?,?,?,?,?,?,?)
+
+		"""
+
+	sql_handler.execute(sql, values)
+
+
+            
+            
 
 class Kunde():
 
