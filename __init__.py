@@ -4,21 +4,6 @@ from . import sql_handler
 # Constant
 HF_PATH = os.path.dirname(__file__)
 
-def add_client(values):
-    """
-    Adds a client to the database.
-    Arguments: tuple = (navn str, org_nr str, adresse str, vat float, valuta str)
-    Returns None
-    """
-    
-    sql = """
-        INSERT INTO clients
-        VALUES (?,?,?,?,?);
-        """
-
-    sql_handler.execute(sql, values)
-
-    return
 
 def add_invoice_item(values):
 	"""
@@ -27,66 +12,38 @@ def add_invoice_item(values):
 	Optional = {"vat": float}
 	Returns None
 	"""
-
 	values.setdefault("vat", None)
 
 	sql = """
-		INSERT INTO invoice_items
-		VALUES (?,?,?,?,?,?,?,?)
+		INSERT INTO invoice_items (dato, id, beskrivelse, netto, vat, client)
+		VALUES (:dato,:id,:beskrivelse,:netto,:vat,:client)
 
 		"""
-
 	sql_handler.execute(sql, values)
 
+def create_invoice(client, bank, frist=30, language="NO"):
 
-            
-            
+	values = {"client": client, "bank": bank, "language": language}
 
-class Kunde():
+	values["id"] = uuid.uuid4().fields[1]
+	
+	values["dato"] = time.time()
 
-	def __init__(self, navn, org_nr, adresse, vat=0.25, valuta="NOK"):
-		self.navn = navn
-		self.org_nr = org_nr
-		self.adresse = adresse
-		self.vat = vat
-		self.valuta = valuta
+	values["forfall"] = values["dato"] + (86400 * frist)
 
-	def __str__(self):
-		return self.navn
-
-class Bank():
-
-	def __init__(self, konto, iban, bic, bank):
-		self.konto = konto
-		self.iban = iban
-		self.bic = bic
-		self.bank = bank
-
-class Faktura():
-
-	def __init__(self):
-		self.id = self.make_invoice_number()
-		dates = self.get_invoice_dates()
-		self.dato = dates[0]
-		self.forfall = dates[1]
-
-	def make_invoice_number(self):
+	sql = """
+		INSERT INTO invoice
+		VALUES (:id,:dato,:forfall,:language,:client,:bank)
 		"""
-		Returns a random invoice number.
-		"""
-		UUID = uuid.uuid4()
-		return UUID.fields[1]
+	sql_handler.execute(sql, values)
 
-	def get_invoice_dates(self):
-		"""
-		Returns the current date and date in 30 months.
-		"""
-		current_time = time.time()
-		dato = datetime.datetime.fromtimestamp(current_time).strftime("%d.%m.%Y")
-		next_month = current_time + 2592000 #30 dager
-		forfall = datetime.datetime.fromtimestamp(next_month).strftime("%d.%m.%Y")
+def translate_timestamp(timestamp):
+	"""
+	Converts timestamp to string.
+	"""
+	return  datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%Y")
 
-		return (dato, forfall)
+	
 
 class Generator():
 	"""

@@ -4,7 +4,7 @@ connection = sqlite3.connect("hammer_faktura.db")
 
 cursor = connection.cursor()
 
-# CREATE STATEMENT CLIENT TABLE
+# CREATE STATEMENT CLIENTS TABLE
 cursor.execute("""
     CREATE TABLE clients (
         pk INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,18 +15,45 @@ cursor.execute("""
         valuta VARCHAR
         );""")
 
-# CREATE STATEMENT INVOICE ITEM TABLE
+# CREATE STATEMENT INVOICE_ITEMS TABLE
 cursor.execute("""
     CREATE TABLE invoice_items (
         dato INTEGER,
         id VARCHAR,
         beskrivelse VARCHAR NOT NULL,
         netto FLOAT NOT NULL,
-        vat FLOAT NOT NULL,
+        vat FLOAT,
         client INTEGER NOT NULL,
+        invoice INTEGER,
         UNIQUE (dato,id),
-        FOREIGN KEY (client) REFERENCES clients (pk)
+        FOREIGN KEY (client) REFERENCES clients (pk),
+        FOREIGN KEY (invoice) REFERENCES invoices (id)
         );""")
+
+# CREATE STATEMENT BANKS TABLE
+cursor.execute("""
+    CREATE TABLE banks (
+        pk INTEGER PRIMARY KEY AUTOINCREMENT,
+        konto VARCHAR,
+        iban VARCHAR,
+        bic VARCHAR,
+        bank VARCHAR
+    );""")
+
+# CREATE STATEMENT INVOICES TABLE
+cursor.execute("""
+    CREATE TABLE invoices (
+        id INTEGER PRIMARY KEY,
+        dato INTEGER NOT NULL,
+        forfall INTEGER NOT NULL,
+        language VARCHAR NOT NULL,
+        client INTEGER NOT NULL,
+        bank INTEGER NOT NULL,
+        FOREIGN KEY (language) REFERENCES languages (pk)
+        FOREIGN KEY (client) REFERENCES clients (pk),
+        FOREIGN KEY (bank) REFERENCES banks (pk)
+    );""")
+
 
 connection.commit()
 connection.close()
