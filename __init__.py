@@ -4,7 +4,6 @@ from . import sql_handler
 # Constant
 HF_PATH = os.path.dirname(__file__)
 
-
 def add_invoice_item(values):
 	"""
 	Adds an invoice item to the database.
@@ -27,21 +26,72 @@ def create_invoice(client, bank, frist=30, language="NO"):
 
 	values["id"] = uuid.uuid4().fields[1]
 	
-	values["dato"] = time.time()
+	values["dato"] = int(time.time())
 
-	values["forfall"] = values["dato"] + (86400 * frist)
+	values["forfall"] = int(values["dato"] + (86400 * frist))
 
 	sql = """
-		INSERT INTO invoice
+		INSERT INTO invoices
 		VALUES (:id,:dato,:forfall,:language,:client,:bank)
 		"""
 	sql_handler.execute(sql, values)
 
-def translate_timestamp(timestamp):
+	# Retrieve the new invoice number to return 
+	sql = """
+		SELECT id FROM invoices WHERE dato=(SELECT MAX(dato) FROM invoices) AND client=:client;
+		"""
+	
+	return sql_handler.retrieve_one_wvalue(sql, {"client": client})
+
+
+def assign_invoice_items(invoice, to, _from):
+	"""
+	Assigns all items matching the date range and client to the invoice.
+	Arguments: invoice int, to str, from str. Format strings like this: "01.01.1990"
+	"""
+
+	# Turn strings into timestamps
+	to_ts = string_to_timestamp(to)
+	from_ts = string_to_timestamp(_from)
+
+	# Retrieve the client from the invoice
+	sql = """
+		SELECT client
+		FROM invoices
+		WHERE id = ?;
+		"""
+	client = sql_handler.retrieve_one_wvalue(sql, (invoice,))
+	
+	# Assign all invoice items matching client and daterange to the invoice.
+	values = {
+		"invoice": invoice,
+		"to": to_ts,
+		"from": from_ts,
+		"client": client
+	}
+	
+	sql = """
+	UPDATE invoice_items
+	SET invoice = :invoice
+	WHERE dato BETWEEN :to AND :from AND client = :client;
+	"""
+	sql_handler.execute(sql, values)
+
+def timestamp_to_string(timestamp):
 	"""
 	Converts timestamp to string.
 	"""
 	return  datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%Y")
+
+def string_to_timestamp(str):
+	"""
+	Converts string to timestamp.
+	"""
+	strlist = str.split(".")
+
+	dobj = datetime.datetime(int(strlist[2]), int(strlist[1]), int(strlist[0]))
+
+	return int(time.mktime(dobj.timetuple()))
 
 	
 
@@ -57,7 +107,7 @@ class Generator():
 		self.client = client
 		
 		# Invoice data
-		self.invoice = Faktura()
+		#self.invoice = Faktura()
 
 		# Bank
 		self.bank = bank
