@@ -49,7 +49,6 @@ cursor.execute("""
         language VARCHAR NOT NULL,
         client INTEGER NOT NULL,
         bank INTEGER NOT NULL,
-        FOREIGN KEY (language) REFERENCES languages (pk)
         FOREIGN KEY (client) REFERENCES clients (pk),
         FOREIGN KEY (bank) REFERENCES banks (pk)
     );""")
