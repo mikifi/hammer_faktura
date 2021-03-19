@@ -1,5 +1,5 @@
 from . import sql_handler
-from . import Invoice, Client, Bank, Generator, str_to_ts
+from . import Invoice, Client, Bank, Generator, str_to_ts, ts_to_str
 import time, uuid
 
 def makeGenerator(id):
@@ -45,7 +45,8 @@ def makeGenerator(id):
 	sql = """
 		SELECT dato, id, beskrivelse, netto, vat
 		FROM invoice_items
-		WHERE invoice=:invoice;
+		WHERE invoice=:invoice
+		ORDER BY dato;
 	"""
 	result = sql_handler.retrieve_muli_wvalue(sql, values)
 
@@ -112,8 +113,8 @@ def assignItemsByDate(invoice, _from, to):
 	"""
 
 	# Turn strings into timestamps
-	to_ts = str_to_ts(to)
 	from_ts = str_to_ts(_from)
+	to_ts = str_to_ts(to, endOfDay=True)
 
 	# Retrieve the client from the invoice
 	sql = """
@@ -123,11 +124,11 @@ def assignItemsByDate(invoice, _from, to):
 		"""
 	client = sql_handler.retrieve_one_wvalue(sql, (invoice,))
 	
-	# Assign all invoice items matching client and daterange to the invoice.
+	# Assign all invoice items matching client and date range to the invoice.
 	values = {
 		"invoice": invoice,
-		"to": to_ts,
 		"from": from_ts,
+		"to": to_ts,
 		"client": client
 	}
 	
@@ -138,17 +139,54 @@ def assignItemsByDate(invoice, _from, to):
 	"""
 	sql_handler.execute(sql, values)
 
-def quickGenerator(items, client, bank, _from, to):
+def quickGeneratorFromList(items, client, bank):
 	"""
-	Create a fast generator"
-	Arguments: items list, client int, bank int, from_date str, to_date str
-	(dates as strings in this format = "01.01.2001")
-	Returns 
+	Create a fast generator from a list"
+	Arguments: items list, client int, bank int, from_date int, to_date int
+	items={"dato": timestamp, "id": str, "beskrivelse": str, "netto": float}
+	Invoice is created using the highest and lowest date inputs.
+	Returns hammer_faktura.Generator object
 	"""
+	keys = ("dato", "id", "beskrivelse", "netto")
+
 	for i in items:
+		for k in keys:
+			if not k in i.keys():
+				raise KeyError(f"The key: {k} is missing from: {i}")
+
+	dates =[]
+	for i in items:
+		i["client"] = client
 		addItem(i)
-	invoice = createInvoice(1, 1)
-	assignItemsByDate(invoice, _from, to)
+		dates.append(i["dato"])
+
+	# the to and from values provided to the assign function
+	# is the maximum and minimum date of the provided items
+	_from = min(dates)
+	to = max(dates)
+
+	invoice = createInvoice(client, bank)
+	assignItemsByDate(invoice, ts_to_str(_from), ts_to_str(to))
+
 	return makeGenerator(invoice)
 
-	
+def quickGeneratorFromItem(dato, id, beskrivelse, netto, client, bank):
+	"""
+	Create a fast generator from a single item"
+	Arguments: dato str, id str, beskrivelse str, netto float, client int, bank int, from_date str, to_date str
+	(dates as strings in this format = "01.01.2001")
+	Returns a tope: (invoice-nr, body str)
+	"""
+	item = {
+		"id": id,
+		"beskrivelse": beskrivelse,
+		"netto": netto,
+		"client": client,
+	}
+	item["dato"] = str_to_ts(dato)
+
+	addItem(item)
+	invoice = createInvoice(client, bank)
+	assignItemsByDate(invoice, dato, dato)
+
+	return makeGenerator(invoice)

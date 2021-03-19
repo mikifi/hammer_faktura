@@ -49,6 +49,14 @@ class Generator():
 		# Stylesheet
 		self.css = "/".join(["..", "hammer_faktura", "maler","faktura.css"])
 
+	def makeInvoiceBody(self):
+		"""
+		Creates makes item list, creates table and returns body.
+		"""
+		self.add_to_invoice()
+		self.generate_table()
+		return self.generate_body()
+
 
 	def generate_body(self):
 		"""
@@ -126,13 +134,18 @@ def ts_to_str(timestamp):
 	"""
 	return  datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%Y")
 
-def str_to_ts(str):
+def str_to_ts(str, endOfDay=False):
 	"""
 	Converts string to timestamp.
+	if endOfDay, the timestamp is set to 23:59:59 of that day.
+	Else, 00.00.00
 	"""
 	strlist = str.split(".")
 
-	dobj = datetime.datetime(int(strlist[2]), int(strlist[1]), int(strlist[0]))
+	if endOfDay:
+		dobj = datetime.datetime(int(strlist[2]), int(strlist[1]), int(strlist[0]), 23, 59 , 59)
+	else:
+		dobj = datetime.datetime(int(strlist[2]), int(strlist[1]), int(strlist[0]), 0, 0, 0)
 
 	return int(time.mktime(dobj.timetuple()))
 		
