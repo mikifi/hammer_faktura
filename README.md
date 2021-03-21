@@ -1,9 +1,6 @@
 # Hammer Faktura
 
-Dette er en en fakturagenerator som kan brukes til å skape fakturaer.
+Dette er en en fakturagenerator som kan brukes til å skape fakturaer. Den har støtte for database og kan brukes i kommandolinjen. Det gjenstår litt arbeid: kommandolinjeverktøyet er kun halvveis implementert og det mangler full CRUD-støtte.
 
-Se bloggen min for mer informasjon om hvordan den virker:
+[Dokumentasjon finner du på bloggen min!](https://www.olehammersland.com/blogg/hammer_faktura_versjon_3/#dokumentasjon)
 
-[Fakturagenerator i Python (tidligere utgave)](https://www.olehammersland.com/blogg/fakturagenerator-i-python/) 
-
-[Fakturagenerator del to (siste versjon)](https://www.olehammersland.com/blogg/fakturaer-del-to/) 

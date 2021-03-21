@@ -68,6 +68,10 @@ def addBank(konto, iban, bic, bank):
 	return sql_handler.retrieve_one_wvalue(sql, {"konto": konto})
 
 def Table(table):
+    """
+    Prints a pretty list of the named table to stdout.
+    Is invoked by the "-l" flag on the CLI.
+    """
 	sql = f"""
 	SELECT * 
 	FROM {table};"""
@@ -240,9 +244,9 @@ def quickGeneratorFromList(items, client, bank):
 def quickGeneratorFromItem(dato, id, beskrivelse, netto, client, bank):
 	"""
 	Create a fast generator from a single item"
-	Arguments: dato str, id str, beskrivelse str, netto float, client int, bank int, from_date str, to_date str
-	(dates as strings in this format = "01.01.2001")
-	Returns a tope: (invoice-nr, body str)
+	Arguments: dato str, id str, beskrivelse str, netto float, client int, bank int
+	To and from date is equal to delivery date of item.
+	Returns hammer_faktura.Generator
 	"""
 	item = {
 		"id": id,
