@@ -1,0 +1,34 @@
+<hr>
+    <table class="oppdragsliste">
+        <colgroup>
+            <col width="10%" />
+            <col width="20%" />
+            <col width="50%" />
+            <col width="10%" />
+            <col width="10%" />
+            <col width="10%" />
+        </colgroup>
+        <thead>
+            <tr class="header">
+                <th align="left">DATE</th>
+                <th align="left">ID</th>
+                <th align="left">DESCRIPTION</th>
+                <th align="right">NET VALUE<br>({valuta})</th>
+                <th align="right">VAT</th>
+                <th align="right">GROSS VALUE<br>({valuta})</th>
+            </tr>
+        </thead>
+    <tbody>
+
+        {tabell}
+
+    </tbody>
+</table>
+
+<hr>
+
+<div class="total">
+    <strong>Net total: {netto:.2f} {valuta}</strong><br>
+    <strong>Total VAT: {totalMVA:.2f} {valuta}</strong><br>
+    <strong>Gross total: {brutto:.2f} {valuta}</strong><br>
+</div>

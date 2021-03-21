@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>   
+        {style}   
+    </head>
+
+    <body>
+        <div class="topp">
+            Ole Hammersland ENK –– VAT no. 926 462 040 MVA –– Louises gate 24b, 0169 Oslo, Norway
+        </div>
+                    
+        <table>
+            <tr>
+                <td class="kundeinfo">
+                    <p><strong>Client</strong></p>
+                    <p>{navn}</p>
+                    <p>VAT no.	{org_nr}</p>
+                    <p>Address	{adresse}</p>
+                    
+                </td>
+
+                <td class="fakturainfo">
+                    <h1>Invoice</h1>
+                    <p>Invoice no.: {id}</p>
+                    <p>Invoice date: {dato}</p>
+                    <p>Due date: {forfall}</p>
+                    
+                </td>
+            </tr>
+        </table>
+
+            {table}
+
+        <p>
+            <div class="bankinfo">
+            <strong>Payment details:</strong><br>
+            Account no.: {konto}<br>
+            IBAN: {iban}<br>
+            BIC: {bic}<br>
+            Bank: {bank}
+            </div>
+        </p>
+
+    </body>
+</html>

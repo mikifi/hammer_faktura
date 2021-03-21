@@ -62,7 +62,9 @@ class Generator():
 		"""
 		Returns the invoice body.
 		"""
-		with open(os.path.join(HF_PATH, "maler", "fakturamal.html")) as f:
+		language_code = self.invoice.language.lower()
+
+		with open(os.path.join(HF_PATH, "maler", f"fakturamal_{language_code}.html")) as f:
 			fakturamal = f.read()
 
 		with open(os.path.join(HF_PATH, "maler", "style.html")) as f:
@@ -113,7 +115,9 @@ class Generator():
 		"""
 		Generate the table.
 		"""
-		with open(os.path.join(HF_PATH, "maler", "tabellmal.html")) as f:
+		language_code = self.invoice.language.lower()
+
+		with open(os.path.join(HF_PATH, "maler", f"tabellmal_{language_code}.html")) as f:
 			tabellmal = f.read()
 
 		tabell = "\n".join(self.tr_elem_list)

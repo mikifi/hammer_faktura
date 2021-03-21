@@ -2,6 +2,117 @@ from . import sql_handler
 from . import Invoice, Client, Bank, Generator, str_to_ts, ts_to_str
 import time, uuid
 
+def addItem(values):
+	"""
+	Adds an invoice item to the database.
+	Arguments: dict = {"dato": int, "id": str, "beskrivelse": str, "netto": float, "client": int}
+	Optional = {"vat": float}
+	Returns None
+	"""
+	values.setdefault("vat", None)
+
+	sql = """
+		INSERT INTO invoice_items (dato, id, beskrivelse, netto, vat, client)
+		VALUES (:dato,:id,:beskrivelse,:netto,:vat,:client)
+
+		"""
+	sql_handler.execute(sql, values)
+
+def addClient(navn, org_nr, adresse, vat, valuta):
+	"""
+    Adds a client to the database.
+    Arguments: navn str, org_nr str, adresse str, vat float, valuta str
+    Returns primary key
+    """
+	values = {
+		"navn": navn,
+		"org_nr": org_nr,
+		"adresse": adresse,
+		"vat": vat,
+		"valuta": valuta
+	}
+	
+	sql = """
+        INSERT INTO clients (navn, org_nr, adresse, vat, valuta)
+        VALUES (:navn,:org_nr,:adresse,:vat,:valuta);
+        """
+		
+	sql_handler.execute(sql, values)
+
+	# Retrieve the new client pk to return 
+	sql = """
+		SELECT pk FROM clients WHERE org_nr=:org_nr;
+		"""
+	
+	return sql_handler.retrieve_one_wvalue(sql, {"org_nr": org_nr})
+	
+def addBank(konto, iban, bic, bank):
+	"""
+    Adds a bank to the database.
+    Arguments: konto str, iban str, bic str, bank str
+    Returns primary key
+    """
+	
+	values = {"konto": konto,"iban": iban,"bic": bic,"bank": bank}
+	
+	sql = """
+        INSERT INTO banks (konto, iban, bic, bank)
+        VALUES (:konto,:iban,:bic,:bank);
+        """
+	sql_handler.execute(sql, values)
+
+	sql = """
+		SELECT pk FROM banks WHERE konto=:konto;
+		"""
+	
+	return sql_handler.retrieve_one_wvalue(sql, {"konto": konto})
+
+def Table(table):
+	sql = f"""
+	SELECT * 
+	FROM {table};"""
+	
+	values = sql_handler.retrieve(sql)
+	
+	maxwidth = [0] * (len(values[0])) 
+
+	for v in values:
+		for i, l in enumerate(v):
+			if len(str(l)) > maxwidth[i]:
+				maxwidth[i] = len(str(l))
+
+	for v in values:
+		print(str(v[0]).ljust(maxwidth[0] + 5), end="")
+		for i, l in enumerate(v[1:-1]):
+			print(str(l).ljust(maxwidth[i+1] + 5), end="")
+		print(str(v[-1]).rjust(maxwidth[-1] + 5))
+
+def addInvoice(client, bank, dato=int(time.time()), frist=30, language="NO"):
+	"""
+	Creates an empty invoice without any items.
+	Arguments: client int, bank int, frist=30, language="NO"
+	Returns invoice number
+	"""
+
+	values = {"client": client, "bank": bank, "language": language, "dato": dato}
+
+	values["id"] = uuid.uuid4().fields[1]
+
+	values["forfall"] = int(values["dato"] + (86400 * frist))
+
+	sql = """
+		INSERT INTO invoices
+		VALUES (:id,:dato,:forfall,:language,:client,:bank)
+		"""
+	sql_handler.execute(sql, values)
+
+	# Retrieve the new invoice number to return 
+	sql = """
+		SELECT id FROM invoices WHERE dato=(SELECT MAX(dato) FROM invoices) AND client=:client;
+		"""
+	
+	return sql_handler.retrieve_one_wvalue(sql, {"client": client})
+
 def makeGenerator(id):
 	"""
 	Returns all invoice information from database.
@@ -62,50 +173,6 @@ def makeGenerator(id):
 
 	return Generator(invoice, client, bank, invoice_items)
 
-def addItem(values):
-	"""
-	Adds an invoice item to the database.
-	Arguments: dict = {"dato": int, "id": str, "beskrivelse": str, "netto": float, "client": int}
-	Optional = {"vat": float}
-	Returns None
-	"""
-	values.setdefault("vat", None)
-
-	sql = """
-		INSERT INTO invoice_items (dato, id, beskrivelse, netto, vat, client)
-		VALUES (:dato,:id,:beskrivelse,:netto,:vat,:client)
-
-		"""
-	sql_handler.execute(sql, values)
-
-def createInvoice(client, bank, frist=30, language="NO"):
-	"""
-	Creates an empty invoice without any items.
-	Arguments: client int, bank int, frist=30, language="NO"
-	Returns invoice number
-	"""
-
-	values = {"client": client, "bank": bank, "language": language}
-
-	values["id"] = uuid.uuid4().fields[1]
-	
-	values["dato"] = int(time.time())
-
-	values["forfall"] = int(values["dato"] + (86400 * frist))
-
-	sql = """
-		INSERT INTO invoices
-		VALUES (:id,:dato,:forfall,:language,:client,:bank)
-		"""
-	sql_handler.execute(sql, values)
-
-	# Retrieve the new invoice number to return 
-	sql = """
-		SELECT id FROM invoices WHERE dato=(SELECT MAX(dato) FROM invoices) AND client=:client;
-		"""
-	
-	return sql_handler.retrieve_one_wvalue(sql, {"client": client})
-
 def assignItemsByDate(invoice, _from, to):
 	"""
 	Assigns all items matching the date range and client to the invoice.
@@ -165,7 +232,7 @@ def quickGeneratorFromList(items, client, bank):
 	_from = min(dates)
 	to = max(dates)
 
-	invoice = createInvoice(client, bank)
+	invoice = addInvoice(client, bank)
 	assignItemsByDate(invoice, ts_to_str(_from), ts_to_str(to))
 
 	return makeGenerator(invoice)
@@ -186,7 +253,7 @@ def quickGeneratorFromItem(dato, id, beskrivelse, netto, client, bank):
 	item["dato"] = str_to_ts(dato)
 
 	addItem(item)
-	invoice = createInvoice(client, bank)
+	invoice = addInvoice(client, bank)
 	assignItemsByDate(invoice, dato, dato)
 
 	return makeGenerator(invoice)
