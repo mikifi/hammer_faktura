@@ -104,7 +104,12 @@ def add(ARGS):
             confirm_add(("item", dic))
 
     else:
-        print("Can only add bank, item or client through the CLI.")
+        print("""
+        Something went wrong. Did you use the right arguments?
+        python -m hammer_faktura -l bank <konto> <iban> <bic> <name>
+        python -m hammer_faktura -l client <name> <org_nr> <adress> <vat> <valuta>
+        python -m hammer_faktura -l item <dato> <id> <beskrivelse> <netto> [vat] <client>
+        """)
 
 
 # Start here

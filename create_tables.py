@@ -19,6 +19,7 @@ try:
     # CREATE STATEMENT INVOICE_ITEMS TABLE
     cursor.execute("""
         CREATE TABLE invoice_items (
+            pk INTEGER PRIMARY KEY AUTOINCREMENT,
             dato INTEGER,
             id VARCHAR,
             beskrivelse VARCHAR NOT NULL,
