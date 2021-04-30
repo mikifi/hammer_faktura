@@ -1,6 +1,7 @@
 from . import sql_handler
 from . import Invoice, Client, Bank, Generator, str_to_ts, ts_to_str
 import time, uuid
+from sqlite3 import IntegrityError
 
 def addItem(values):
     """
@@ -250,8 +251,11 @@ def quickGeneratorFromList(items, client, bank):
 
     invoice = addInvoice(client, bank)
     for item in items:
-        pk = addItem(item)
-        assignItemByPk(invoice, pk)
+        try: 
+            pk = addItem(item)
+            assignItemByPk(invoice, pk)
+        except IntegrityError:
+            print(f"Invoice item {item['id']} already exists. Skipped.")
 
     return makeGenerator(invoice)
 
