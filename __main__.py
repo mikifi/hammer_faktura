@@ -1,5 +1,5 @@
 import sys
-from .hfdb import Table, addBank, addClient, addItem
+from .hfdb import table, invoices, addBank, addClient, addItem
 from sqlite3 import IntegrityError, OperationalError
 from . import str_to_ts
 
@@ -27,11 +27,11 @@ def confirm_add(ARGS):
 
 
 
-def list(table):
+def list(tabell):
     try:
-        Table(table)
+        table(tabell)
     except OperationalError:
-        print(f"No table named {table}")
+        print(f"No table named {tabell}")
 
 def add(ARGS):
     # CLIENT
@@ -106,10 +106,16 @@ def add(ARGS):
     else:
         print("""
         Something went wrong. Did you use the right arguments?
-        python -m hammer_faktura -l bank <konto> <iban> <bic> <name>
-        python -m hammer_faktura -l client <name> <org_nr> <adress> <vat> <valuta>
-        python -m hammer_faktura -l item <dato> <id> <beskrivelse> <netto> [vat] <client>
+        python -m hammer_faktura -a bank <konto> <iban> <bic> <name>
+        python -m hammer_faktura -a client <name> <org_nr> <adress> <vat> <valuta>
+        python -m hammer_faktura -a item <dato> <id> <beskrivelse> <netto> [vat] <client>
         """)
+
+def invo(args):
+    if len(args) != 2:
+        print("""Usage: python -m hammer_faktura -inv '01.01.2021' '31.01.2021'""")
+    else:
+        invoices(args[0], args[1])
 
 
 # Start here
@@ -124,6 +130,9 @@ if  len(ARGS) < 2 or len(ARGS) > 8:
 else:
     if ARGS[0] == "-l" or ARGS[0] == "--list":
         list(ARGS[1])
+
+    elif ARGS[0] == "-inv" or ARGS[0] == "--invoices":
+        invo(ARGS[1:])
 
     elif ARGS[0] == "-a" or ARGS[0] == "--add":
         add(ARGS[1:])

@@ -75,28 +75,6 @@ def addBank(konto, iban, bic, bank):
 
     return sql_handler.retrieve_one_wvalue(sql, {"konto": konto})
 
-def Table(table):
-    """
-    Prints a pretty list of the named table to stdout.
-    Is invoked by the "-l" flag on the CLI.
-    """
-    sql = f"""SELECT * FROM {table};"""
-    
-    values = sql_handler.retrieve(sql)
-    
-    maxwidth = [0] * (len(values[0]))
-    
-    for v in values:
-        for i, l in enumerate(v):
-            if len(str(l)) > maxwidth[i]:
-                maxwidth[i] = len(str(l))
-
-    for v in values:
-        print(str(v[0]).ljust(maxwidth[0] + 5), end="")
-        for i, l in enumerate(v[1:-1]):
-            print(str(l).ljust(maxwidth[i+1] + 5), end="")
-        print(str(v[-1]).rjust(maxwidth[-1] + 5))
-
 def addInvoice(client, bank, dato=int(time.time()), frist=30, language="NO"):
     """
     Creates an empty invoice without any items.
@@ -278,3 +256,79 @@ def quickGeneratorFromItem(dato, id, beskrivelse, netto, client, bank):
     assignItemByPk(invoice, pk)
 
     return makeGenerator(invoice)
+
+def invoices(_from, to):
+    """
+    Retrieves the invoices between the set dates.
+    Arguments: from str, to str. Format strings like this: "01.01.1990"
+    """
+
+    sql = """
+    select 
+        invoices.id, 
+        clients.navn, 
+        clients.valuta, 
+        clients.vat, 
+        round(sum(invoice_items.netto),2) as "netto", 
+        round(sum(invoice_items.netto) * (1 + clients.vat),2) as "brutto"
+    from invoices, invoice_items
+    join clients on clients.pk = invoices.client
+    where invoices.id = invoice_items.invoice 
+    and invoices.dato between :from and :to
+    group by invoice_items.invoice
+    order by invoices.client
+    """
+
+    # Turn strings into timestamps
+    from_ts = str_to_ts(_from)
+    to_ts = str_to_ts(to, endOfDay=True)
+
+    values = {
+        "to": to_ts,
+        "from": from_ts
+    }
+
+    result = sql_handler.retrieve_multi_wvalue(sql, values)
+
+    ntotal = 0.0
+    btotal = 0.0
+
+    for i in result:
+        ntotal += i[4]
+        btotal += i[5]
+
+    result.insert(0, ("Invoice", "Client", "Currency", "VAT", "NETTO", "BRUTTO\n")) # <-- Merk linjeskift
+    result.append(("", "", "", "", "", ""))
+    result.append(("TOTAL", " ", " ", " ", round(ntotal, 2), round(btotal, 2)))
+
+
+
+    prettyPrinter(result)
+
+def table(table):
+    """
+    Prints a pretty list of the named table to stdout.
+    Is invoked by the "-l" flag on the CLI.
+    """
+    sql = f"""SELECT * FROM {table};"""
+    
+    prettyPrinter(sql_handler.retrieve(sql))
+    
+
+def prettyPrinter(values):
+    """
+    prettyPrinter prints a nice table in the CL.
+    Used by the CLI.
+    """
+    maxwidth = [0] * (len(values[0]))
+
+    for v in values:
+        for i, l in enumerate(v):
+            if len(str(l)) > maxwidth[i]:
+                maxwidth[i] = len(str(l))
+
+    for v in values:
+        print(str(v[0]).ljust(maxwidth[0] + 5), end="")
+        for i, l in enumerate(v[1:-1]):
+            print(str(l).ljust(maxwidth[i+1] + 5), end="")
+        print(str(v[-1]).rjust(maxwidth[-1] + 5))
