@@ -117,7 +117,7 @@ def makeGenerator(id):
         FROM invoices
         WHERE id=:invoice;
     """
-    result = sql_handler.retrieve_muli_wvalue(sql, values)
+    result = sql_handler.retrieve_multi_wvalue(sql, values)
 
     invoice = Invoice(result[0][0], result[0][1], result[0][2], result[0][3])
         
@@ -127,7 +127,7 @@ def makeGenerator(id):
         FROM clients
         WHERE pk=(SELECT client FROM invoices WHERE id=:invoice);
     """
-    result = sql_handler.retrieve_muli_wvalue(sql, values)
+    result = sql_handler.retrieve_multi_wvalue(sql, values)
 
     client = Client(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4])
 
@@ -137,7 +137,7 @@ def makeGenerator(id):
         FROM banks
         WHERE pk=(SELECT bank FROM invoices WHERE id=:invoice);
     """
-    result = sql_handler.retrieve_muli_wvalue(sql, values)
+    result = sql_handler.retrieve_multi_wvalue(sql, values)
 
     bank = Bank(result[0][0], result[0][1], result[0][2], result[0][3])
 
@@ -148,7 +148,7 @@ def makeGenerator(id):
         WHERE invoice=:invoice
         ORDER BY dato;
     """
-    result = sql_handler.retrieve_muli_wvalue(sql, values)
+    result = sql_handler.retrieve_multi_wvalue(sql, values)
 
     invoice_items = []
     for jobb in result:
@@ -293,15 +293,21 @@ def invoices(_from, to):
     ntotal = 0.0
     btotal = 0.0
 
-    for i in result:
-        ntotal += i[4]
-        btotal += i[5]
+    for i, res in enumerate(result):
+
+
+        # Veldig stygg løsning for å bytte ut tuplene med EUR med tupler som har rundet opp euroen til tilnærmet kroner.
+        if res[2] == "EUR":
+            ny = (res[0], res[1], "EUR (* 10)", res[3], round(res[4] * 10, 2), round(res[5]*10, 2))
+
+            res = ny
+            result[i] = res
+        ntotal += res[4]
+        btotal += res[5]
 
     result.insert(0, ("Invoice", "Client", "Currency", "VAT", "NETTO", "BRUTTO\n")) # <-- Merk linjeskift
     result.append(("", "", "", "", "", ""))
     result.append(("TOTAL", " ", " ", " ", round(ntotal, 2), round(btotal, 2)))
-
-
 
     prettyPrinter(result)
 
