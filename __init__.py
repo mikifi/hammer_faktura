@@ -1,16 +1,18 @@
 import os, time, datetime, uuid
+import locale
 
 # Constant
 HF_PATH = os.path.dirname(__file__)
 
 class Client():
 
-	def __init__(self, navn, org_nr, adresse, vat, valuta):
+	def __init__(self, navn, org_nr, adresse, vat, valuta, pk):
 		self.navn = navn
 		self.org_nr = org_nr
 		self.adresse = adresse
 		self.vat = vat
 		self.valuta = valuta
+		self.pk = pk
 
 class Bank():
 
@@ -69,7 +71,7 @@ class Generator():
 
 		with open(os.path.join(HF_PATH, "maler", "style.html")) as f:
 			style = f.read()
-
+		locale.setlocale(locale.LC_NUMERIC, 'nb_NO.utf8')
 
 		return fakturamal.format(
 								# CSS
@@ -79,7 +81,7 @@ class Generator():
 								org_nr=self.client.org_nr,
 								adresse=self.client.adresse,
 								# Invoice information
-								id=self.invoice.id, 
+								id=((self.client.pk + 500) * 100000) + self.invoice.id,
 								dato=ts_to_str(self.invoice.dato), 
 								forfall=ts_to_str(self.invoice.forfall), 
 								# Table
@@ -125,9 +127,9 @@ class Generator():
 		totalMVA = self.brutto_total - self.netto_total
 
 		self.table = tabellmal.format(tabell=tabell, 
-									netto=self.netto_total, 
-									totalMVA=totalMVA, 
-									brutto=self.brutto_total,
+									netto=round(self.netto_total,2),
+									totalMVA=round(totalMVA,2),
+									brutto=round(self.brutto_total,2),
 									valuta=self.client.valuta)
 
 		return

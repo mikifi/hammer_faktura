@@ -84,13 +84,11 @@ def addInvoice(client, bank, dato=int(time.time()), frist=30, language="NO"):
 
     values = {"client": client, "bank": bank, "language": language, "dato": dato}
 
-    values["id"] = uuid.uuid4().fields[1]
-
     values["forfall"] = int(values["dato"] + (86400 * frist))
 
     sql = """
-        INSERT INTO invoices
-        VALUES (:id,:dato,:forfall,:language,:client,:bank)
+        INSERT INTO invoices (dato, forfall, language, client, bank)
+        VALUES (:dato,:forfall,:language,:client,:bank)
         """
 
     sql_handler.execute(sql, values)
@@ -123,13 +121,13 @@ def makeGenerator(id):
         
     # CLIENT!
     sql = f"""
-        SELECT navn, org_nr, adresse, vat, valuta
+        SELECT navn, org_nr, adresse, vat, valuta, pk
         FROM clients
         WHERE pk=(SELECT client FROM invoices WHERE id=:invoice);
     """
     result = sql_handler.retrieve_multi_wvalue(sql, values)
 
-    client = Client(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4])
+    client = Client(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4], result[0][5])
 
     # BANK!
     sql = f"""
@@ -191,7 +189,7 @@ def assignItemsByDate(invoice, _from, to):
     sql = """
     UPDATE invoice_items
     SET invoice = :invoice
-    WHERE dato BETWEEN :from AND :to AND client = :client;
+    WHERE dato BETWEEN :from AND :to AND client = :client AND pk > 1;
     """
     sql_handler.execute(sql, values)
 

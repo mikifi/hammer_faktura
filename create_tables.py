@@ -45,7 +45,7 @@ try:
     # CREATE STATEMENT INVOICES TABLE
     cursor.execute("""
         CREATE TABLE invoices (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             dato INTEGER NOT NULL,
             forfall INTEGER NOT NULL,
             language VARCHAR NOT NULL,
